@@ -1,14 +1,10 @@
-# astrbot-plugin-helloworld
+# Astrbot沉默以应插件[APSR]
+# Astrbot Silent Response Plugin
 
-AstrBot 插件模板 / A template plugin for AstrBot plugin feature
+为AI赋予“沉默权”：基于对话逻辑自动判断话题边界，在对话自然结束或内容无意义时，通过输出特定内容触发插件函数吞掉回复，以达到不回复用户的效果，彻底避免无限复读与尬聊
 
-> [!NOTE]
-> This repo is just a template of [AstrBot](https://github.com/AstrBotDevs/AstrBot) Plugin.
-> 
-> [AstrBot](https://github.com/AstrBotDevs/AstrBot) is an agentic assistant for both personal and group conversations. It can be deployed across dozens of mainstream instant messaging platforms, including QQ, Telegram, Feishu, DingTalk, Slack, LINE, Discord, Matrix, etc. In addition, it provides a reliable and extensible conversational AI infrastructure for individuals, developers, and teams. Whether you need a personal AI companion, an intelligent customer support agent, an automation assistant, or an enterprise knowledge base, AstrBot enables you to quickly build AI applications directly within your existing messaging workflows.
+Empowering AI with the "Right to Silence": Intelligently detects conversation boundaries based on dialogue logic, and voluntarily ceases responses when topics conclude or interactions become unproductive. Breaks the endless chat loop.
 
-# Supports
+*在做了在做了，因为自家AI还等着用（这个插件做出来之前完全不敢让自家AI和别的AI聊天好吧，直接永动机）*
 
-- [AstrBot Repo](https://github.com/AstrBotDevs/AstrBot)
-- [AstrBot Plugin Development Docs (Chinese)](https://docs.astrbot.app/dev/star/plugin-new.html)
-- [AstrBot Plugin Development Docs (English)](https://docs.astrbot.app/en/dev/star/plugin-new.html)
+
