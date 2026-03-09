@@ -1,24 +1,45 @@
-from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
+from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
+from astrbot.api.provider import ProviderRequest
 
-@register("helloworld", "YourName", "一个简单的 Hello World 插件", "1.0.0")
-class MyPlugin(Star):
-    def __init__(self, context: Context):
+@register("silent_response", "olozhika", "为AI赋予沉默权，避免无意义复读与尬聊", "1.0.0")
+class SilentResponsePlugin(Star):
+    def __init__(self, context: Context, config: dict = None):
         super().__init__(context)
+        self.config = config or {}
 
-    async def initialize(self):
-        """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
+    @filter.on_llm_request()
+    async def on_llm_request(self, event: AstrMessageEvent, req: ProviderRequest):
+        """注入沉默指令"""
+        if not self.config.get("enable_auto_instruction", True):
+            return
+        instruction = self.config.get("system_instruction", "")
+        trigger = self.config.get("silence_trigger", "[SILENCE]")
+        if instruction:
+            final_instruction = instruction.replace("[SILENCE]", trigger)
+            req.system_prompt += f"\n\n【系统指令 - 沉默权】\n{final_instruction}\n"
 
-    # 注册指令的装饰器。指令名为 helloworld。注册成功后，发送 `/helloworld` 就会触发这个指令，并回复 `你好, {user_name}!`
-    @filter.command("helloworld")
-    async def helloworld(self, event: AstrMessageEvent):
-        """这是一个 hello world 指令""" # 这是 handler 的描述，将会被解析方便用户了解插件内容。建议填写。
-        user_name = event.get_sender_name()
-        message_str = event.message_str # 用户发的纯文本消息字符串
-        message_chain = event.get_messages() # 用户所发的消息的消息链 # from astrbot.api.message_components import *
-        logger.info(message_chain)
-        yield event.plain_result(f"Hello, {user_name}, 你发了 {message_str}!") # 发送一条纯文本消息
+    @filter.on_llm_response()
+    async def on_llm_response(self, event: AstrMessageEvent, resp):
+        """拦截沉默触发词，并手动保存对话历史"""
+        trigger = self.config.get("silence_trigger", "[SILENCE]")
+        if resp.completion_text.strip() == trigger:
+            logger.info(f"[APSR] 检测到沉默触发词 {trigger}，已拦截回复。")
 
-    async def terminate(self):
-        """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
+            # 获取对话管理器
+            conv_mgr = self.context.conversation_manager
+            umo = event.unified_msg_origin
+            cid = await conv_mgr.get_curr_conversation_id(umo)  # 获取当前对话ID
+            if cid:
+                # 构造消息字典（OpenAI 格式）
+                user_message = {"role": "user", "content": event.message_str}
+                assistant_message = {"role": "assistant", "content": ""}
+                # 使用 add_message_pair 将这一对消息追加到历史中
+                await conv_mgr.add_message_pair(cid, user_message, assistant_message)
+
+            # 清空实际回复内容，这样用户不会收到任何消息
+            resp.completion_text = ""
+            # 停止事件传播，防止其他插件干扰 (尤其适用于用户装了很多功能复杂的插件时）
+            if self.config.get("stop_event_on_silence", False):
+                event.stop_event()
