@@ -12,6 +12,11 @@ class SilentResponsePlugin(Star):
     @filter.on_llm_request()
     async def on_llm_request(self, event: AstrMessageEvent, req: ProviderRequest):
         """注入沉默指令"""
+        # 保存当前的请求内容，以便在响应拦截时记录完整历史
+        event.llm_req_prompt = req.prompt
+        if hasattr(req, "extra_user_content_parts"):
+            event.extra_user_content_parts = req.extra_user_content_parts
+
         if not self.config.get("enable_auto_instruction", True):
             return
         instruction = self.config.get("system_instruction", "")
@@ -33,9 +38,32 @@ class SilentResponsePlugin(Star):
             umo = event.unified_msg_origin
             cid = await conv_mgr.get_curr_conversation_id(umo)  # 获取当前对话ID
             if cid:
-                # 构造消息字典（OpenAI 格式）
-                user_message = {"role": "user", "content": event.message_str}
-                assistant_message = {"role": "assistant", "content": ""}
+                # 构造消息字典（多模态格式）
+                user_content = []
+                
+                # 1. 添加主要的文本提示 (req.prompt)
+                prompt = getattr(event, "llm_req_prompt", "")
+                if prompt:
+                    user_content.append({"type": "text", "text": prompt})
+                
+                # 2. 添加额外的部件 (extra_user_content_parts)
+                req_parts = getattr(event, "extra_user_content_parts", [])
+                if req_parts:
+                    for part in req_parts:
+                        if hasattr(part, "text"):
+                            user_content.append({"type": "text", "text": part.text})
+                        elif isinstance(part, dict):
+                            user_content.append(part)
+                
+                # 如果都没有内容，则回退到 event.message_str
+                if not user_content:
+                    user_content.append({"type": "text", "text": event.message_str})
+
+                user_message = {"role": "user", "content": user_content}
+                assistant_message = {
+                    "role": "assistant", 
+                    "content": [{"type": "text", "text": ""}]
+                }
                 # 使用 add_message_pair 将这一对消息追加到历史中
                 await conv_mgr.add_message_pair(cid, user_message, assistant_message)
 
