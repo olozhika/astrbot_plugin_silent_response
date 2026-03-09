@@ -1,0 +1,26 @@
+{
+  "silence_trigger": {
+    "description": "沉默触发词",
+    "type": "string",
+    "hint": "当 AI 输出包含此内容时，插件将拦截并取消回复。",
+    "default": "[SILENCE]"
+  },
+  "system_instruction": {
+    "description": "系统提示词注入",
+    "type": "string",
+    "hint": "注入到系统提示词中，引导 AI 何时选择沉默。",
+    "default": "如果对话已经自然结束（例如双方已经互相道别，如‘晚安’、‘再见’等）、或者聊天对象表现得非常不礼貌、或者对方的输入没有实际意义（如仅发送‘哦’、‘嗯’、‘哈哈’、‘...’等），且不需要进一步回复时，请仅输出 '[SILENCE]'。聊天对象将收不到你的这条消息，达到不回复的目的。"
+  },
+  "enable_auto_instruction": {
+    "description": "自动注入提示词",
+    "type": "bool",
+    "hint": "是否自动将上述提示词注入到每个请求的系统提示词中。",
+    "default": true
+  },
+  "stop_event_on_silence": {
+    "description": "沉默时停止事件传播",
+    "type": "bool",
+    "hint": "当触发沉默时，是否停止后续插件对响应的处理。开启后可防止其他插件在已拦截的回复后追加内容。",
+    "default": false
+  }
+}
