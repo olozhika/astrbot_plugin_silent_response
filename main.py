@@ -29,6 +29,8 @@ class SilentResponsePlugin(Star):
     async def on_llm_response(self, event: AstrMessageEvent, resp):
         """拦截沉默触发词，并手动保存对话历史"""
         trigger = self.config.get("silence_trigger", "[SILENCE]")
+        if not resp.completion_text:
+            return
         content = resp.completion_text.strip()
         if trigger in content and len(content) <= len(trigger) + 3:
             logger.info(f"[APSR] 检测到沉默触发词 {trigger} (内容: {content})，已拦截回复。")
