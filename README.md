@@ -16,7 +16,8 @@ Empowering AI with the "Right to Silence": Intelligently detects conversation bo
 在 AstrBot 插件市场下载安装即可，理论上你并不需要更改本插件的任何设置。
 
 ### 使用演示
-
+![](使用演示.png)
+*在我说晚安之后AI没有再回复，避免了礼貌晚安loop的环节，好耶！*
 
 ## ⚙️ 配置项说明
 理论上你并不需要更改本插件的任何设置。对于安装了某些自动修改AI回复内容的插件的用户，可考虑开启`stop_event_on_silence`。
