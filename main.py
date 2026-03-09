@@ -24,8 +24,9 @@ class SilentResponsePlugin(Star):
     async def on_llm_response(self, event: AstrMessageEvent, resp):
         """拦截沉默触发词，并手动保存对话历史"""
         trigger = self.config.get("silence_trigger", "[SILENCE]")
-        if resp.completion_text.strip() == trigger:
-            logger.info(f"[APSR] 检测到沉默触发词 {trigger}，已拦截回复。")
+        content = resp.completion_text.strip()
+        if trigger in content and len(content) <= len(trigger) + 3:
+            logger.info(f"[APSR] 检测到沉默触发词 {trigger} (内容: {content})，已拦截回复。")
 
             # 获取对话管理器
             conv_mgr = self.context.conversation_manager
@@ -40,6 +41,6 @@ class SilentResponsePlugin(Star):
 
             # 清空实际回复内容，这样用户不会收到任何消息
             resp.completion_text = ""
-            # 停止事件传播，防止其他插件干扰 (尤其适用于用户装了很多功能复杂的插件时）
+            # 停止事件传播，防止其他插件干扰
             if self.config.get("stop_event_on_silence", False):
                 event.stop_event()
