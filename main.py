@@ -3,7 +3,10 @@ from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 from astrbot.api.provider import ProviderRequest
 
-@register("silent_response", "olozhika", "为AI赋予沉默权，避免无意义复读与尬聊", "1.0.0")
+
+@register(
+    "silent_response", "olozhika", "为AI赋予沉默权，避免无意义复读与尬聊", "1.0.0"
+)
 class SilentResponsePlugin(Star):
     def __init__(self, context: Context, config: dict = None):
         super().__init__(context)
@@ -29,11 +32,11 @@ class SilentResponsePlugin(Star):
     async def on_llm_response(self, event: AstrMessageEvent, resp):
         """拦截沉默触发词，并手动保存对话历史"""
         trigger = self.config.get("silence_trigger", "[SILENCE]")
-        if not resp.completion_text:
-            return
         content = resp.completion_text.strip()
         if trigger in content and len(content) <= len(trigger) + 3:
-            logger.info(f"[APSR] 检测到沉默触发词 {trigger} (内容: {content})，已拦截回复。")
+            logger.info(
+                f"[APSR] 检测到沉默触发词 {trigger} (内容: {content})，已拦截回复。"
+            )
 
             # 获取对话管理器
             conv_mgr = self.context.conversation_manager
@@ -42,12 +45,12 @@ class SilentResponsePlugin(Star):
             if cid:
                 # 构造消息字典（多模态格式）
                 user_content = []
-                
+
                 # 1. 添加主要的文本提示 (req.prompt)
                 prompt = getattr(event, "llm_req_prompt", "")
                 if prompt:
                     user_content.append({"type": "text", "text": prompt})
-                
+
                 # 2. 添加额外的部件 (extra_user_content_parts)
                 req_parts = getattr(event, "extra_user_content_parts", [])
                 if req_parts:
@@ -56,16 +59,23 @@ class SilentResponsePlugin(Star):
                             user_content.append({"type": "text", "text": part.text})
                         elif isinstance(part, dict):
                             user_content.append(part)
-                
+
                 # 如果都没有内容，则回退到 event.message_str
                 if not user_content:
                     user_content.append({"type": "text", "text": event.message_str})
 
                 user_message = {"role": "user", "content": user_content}
-                assistant_message = {
-                    "role": "assistant", 
-                    "content": [{"type": "text", "text": ""}]
-                }
+                assistant_content = []
+                if resp.reasoning_content:
+                    assistant_content.append(
+                        {
+                            "type": "think",
+                            "think": resp.reasoning_content,
+                            "encrypted": None,
+                        }
+                    )
+                assistant_content.append({"type": "text", "text": ""})
+                assistant_message = {"role": "assistant", "content": assistant_content}
                 # 使用 add_message_pair 将这一对消息追加到历史中
                 await conv_mgr.add_message_pair(cid, user_message, assistant_message)
 
