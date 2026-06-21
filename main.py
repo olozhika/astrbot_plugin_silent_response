@@ -5,7 +5,7 @@ from astrbot.api.provider import ProviderRequest
 
 
 @register(
-    "silent_response", "olozhika", "为AI赋予沉默权，避免无意义复读与尬聊", "1.0.0"
+    "silent_response", "olozhika", "为AI赋予沉默权，避免无意义复读与尬聊", "1.0.1"
 )
 class SilentResponsePlugin(Star):
     def __init__(self, context: Context, config: dict = None):
